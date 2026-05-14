@@ -12,7 +12,7 @@ from flask import Flask
 app = Flask(__name__)
 @app.route('/')
 def health_check():
-    return "STATUS: OK | NEONINJA ORACLE PROTOCOL (V1.5 PRO) OPERATIONAL"
+    return "STATUS: OK | NEONINJA ORACLE PROTOCOL (V1.6 PRO) OPERATIONAL"
 
 def initialize_daemon():
     port = int(os.environ.get("PORT", 8080))
@@ -24,16 +24,14 @@ daemon_thread.start()
 # ==========================================
 # 📡 TELEGRAM & COINGECKO API KEYS
 # ==========================================
-# ⚠️ Ganti token Telegram kau kat sini (yang baru kau dapat dari BotFather).
 API_TOKEN = '8673710597:AAGD4I53588YSL1QK9ZllzlaeQY68gFttSQ' 
-CG_API_KEY = 'CG-b4VSbfrpCgK5seMpcHssGJe7' # Kunci VIP Pasport CoinGecko
+CG_API_KEY = 'CG-b4VSbfrpCgK5seMpcHssGJe7' 
 
 bot = telebot.TeleBot(API_TOKEN)
 
 MEMORY_CACHE = {} 
 SYSTEM_ACTIVE = False 
 
-# Pembahagi garisan untuk nampak kemas
 REPORT_SEPARATOR = "—" * 38
 
 # ==========================================
@@ -70,32 +68,40 @@ def verify_on_chain(symbol, cg_data):
         cg_rank = cg_data.get('market_cap_rank', 'N/A')
         ath_drop = cg_data.get('ath_change_percentage', 0)
         price_24h_drop = cg_data.get('price_change_percentage_24h', 0)
+        current_price = cg_data.get('current_price', 0)
         
-        # 💎 FORMULASI LAPORAN VIP (NEW LOOK & COSMETICS)
+        # 💎 FORMULASI LAPORAN VIP (PRO COSMETICS)
         report = f"✅ **NEONINJA ORACLE | QUANTITATIVE SIGNAL** ✅\n"
         report += f"*(Multi-Source Data Verification Protocol)*\n\n"
+        
         report += f"{REPORT_SEPARATOR}\n"
-        report += f"Asset Identified:\n"
-        report += f"🔹 **{cg_data['name']}** `${symbol.upper()}`\n"
-        report += f"`{contract_address}`\n"
+        report += f"🔹 **Asset:** {cg_data['name']} (${symbol.upper()})\n"
+        report += f"🔹 **Price:** ${current_price}\n"
+        report += f"🔹 **CA:** `{contract_address}`\n"
         report += f"{REPORT_SEPARATOR}\n\n"
         
-        report += f"📡 **MARKET AGGREGATE DATA (CoinGecko Verified)**\n"
-        report += f"   Global Position: `#{cg_rank}`\n"
-        report += f"   Market Cap     : `${cg_data.get('market_cap', 0):,.0f}`\n"
-        report += f"   Diskaun 24H    : `{price_24h_drop:.2f}%` 🩸\n"
-        report += f"   Diskaun ATH    : `{ath_drop:.2f}%` 📉\n\n"
+        report += f"📊 **MARKET AGGREGATE (CoinGecko)**\n"
+        report += f"   Global Rank   : `#{cg_rank}`\n"
+        report += f"   Market Cap    : `${cg_data.get('market_cap', 0):,.0f}`\n"
+        report += f"   24H Drop      : `{price_24h_drop:.2f}%` 🩸 *(Actionable)*\n"
+        report += f"   ATH Discount  : `{ath_drop:.2f}%` 🟢 *(Deep Value)*\n\n"
         
-        report += f"⛓️ **ON-CHAIN AUDIT (Dexscreener Verified)**\n"
-        report += f"   Real Liquidity : `${liquidity_usd:,.0f}` 🟢\n"
-        report += f"   Insider Holding: `{insider_holding_pct:.1f}%` (Pass)\n"
-        report += f"   Security Score : `{risk_score}` (Safe)\n\n"
+        report += f"⛓️ **ON-CHAIN AUDIT (Dexscreener)**\n"
         
+        # Logik kosmetik Liquidity
+        if liquidity_usd > 100000: lp_status = "🟢 *(Excellent)*"
+        else: lp_status = "🟡 *(Good)*"
+            
+        report += f"   Liquidity (LP): `${liquidity_usd:,.0f}` {lp_status}\n"
+        report += f"   Top 10 Wallets: `{insider_holding_pct:.1f}%` 🟢 *(Safe, <40%)*\n"
+        report += f"   RugCheck Score: `{risk_score}` 🟢 *(Clean)*\n\n"
+        
+        report += f"💡 **VERDICT:** CLEAR FOR ENTRY 🟢\n"
         report += f"{REPORT_SEPARATOR}\n"
-        report += f"Execution & Terminal:\n"
-        report += f"🔹 [Trade terminal (BonkBot)](https://t.me/bonkbot_bot?start={contract_address})\n"
-        report += f"🔹 [View On CoinGecko](https://www.coingecko.com/en/coins/{cg_data['id']})\n"
-        report += f"🔹 [View On Dexscreener](https://dexscreener.com/solana/{contract_address})"
+        
+        report += f"🔗 **Execution & Intel:**\n"
+        report += f"🔫 [Terminal (BonkBot)](https://t.me/bonkbot_bot?start={contract_address})\n"
+        report += f"🦎 [CoinGecko](https://www.coingecko.com/en/coins/{cg_data['id']}) | 📊 [Dexscreener](https://dexscreener.com/solana/{contract_address})"
         
         return report
     except Exception as e:
@@ -103,7 +109,7 @@ def verify_on_chain(symbol, cg_data):
 
 def neoninja_pipeline(chat_id):
     global SYSTEM_ACTIVE
-    print("\n[SYSTEM] Initializing NeoNinja Oracle Protocol (V1.5 PRO Edition)...")
+    print("\n[SYSTEM] Initializing NeoNinja Oracle Protocol (V1.6 PRO Edition)...")
     
     headers = {
         "accept": "application/json",
@@ -117,7 +123,7 @@ def neoninja_pipeline(chat_id):
             
             all_coins = []
             page = 1
-            max_pages = 15 
+            max_pages = 5 # Jimat API: Ambil Top 1250 coins sahaja
             
             while page <= max_pages:
                 if not SYSTEM_ACTIVE: break
@@ -164,8 +170,9 @@ def neoninja_pipeline(chat_id):
                                 
                                 time.sleep(1.5) 
             
-            print(f"[{datetime.now().strftime('%H:%M:%S')}] [⏳] Verification Cycle Complete. Protocol entered backoff phase (5 min)...\n")
-            time.sleep(300) 
+            # Jimat API: Rehat 1 JAM (3600 saat) supaya API 10k tahan sebulan
+            print(f"[{datetime.now().strftime('%H:%M:%S')}] [⏳] Verification Cycle Complete. Protocol resting for 1 HOUR...\n")
+            time.sleep(3600) 
             
         except Exception as e:
             print(f"[{datetime.now().strftime('%H:%M:%S')}] [❌] Network or System Error. Resetting in 30s...")
@@ -173,21 +180,21 @@ def neoninja_pipeline(chat_id):
 
 @bot.message_handler(commands=['start'])
 def start_bot(message):
-    bot.reply_to(message, "✅ **NEONINJA ORACLE PROTOCOL | STATUS: ON STANDBY**\nTaip `/scan` untuk memulakan pemantauan kuantitatif Solana.")
+    bot.reply_to(message, "✅ **NEONINJA ORACLE PROTOCOL**\nStatus: ON STANDBY\nType `/scan` to initiate quantitative monitoring.")
 
 @bot.message_handler(commands=['scan'])
 def engage_scanner(message):
     global SYSTEM_ACTIVE
     if SYSTEM_ACTIVE: return
     SYSTEM_ACTIVE = True
-    bot.reply_to(message, "🟢 **[NEONINJA PROTOCOL] — PROTOKOL DIAKTIFKAN**\n\nSistem pemantauan data kuantitatif Solana dihidupkan.\nKunci VIP CoinGecko disahkan.\n\n*— Analisis algoritma bermula.*")
+    bot.reply_to(message, "🟢 **[SYSTEM ACTIVE]**\nMonitoring Top 1250 Solana Assets.\nStrategy: Swing Trade (Dip >5%, ATH >30%).")
     threading.Thread(target=neoninja_pipeline, args=(message.chat.id,), daemon=True).start()
 
 @bot.message_handler(commands=['stop'])
 def disengage_scanner(message):
     global SYSTEM_ACTIVE
     SYSTEM_ACTIVE = False
-    bot.reply_to(message, "🔴 **[NEONINJA PROTOCOL] — TERMINATED**\n\nOperasi pengesanan pasaran dihentikan. Semua proses pemantauan quantitative cease.")
+    bot.reply_to(message, "🔴 **[SYSTEM TERMINATED]**\nAll quantitative monitoring ceased.")
 
 if __name__ == "__main__":
     bot.polling(none_stop=True)
