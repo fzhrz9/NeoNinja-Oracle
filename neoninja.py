@@ -24,7 +24,7 @@ daemon_thread.start()
 # ==========================================
 # 📡 TELEGRAM API & GLOBAL VARIABLES
 # ==========================================
-API_TOKEN = '8673710597:AAFDfTRuBb839WE6KKXzh4pX1FxbQtFN0sA' 
+API_TOKEN = '8673710597:AAGD4I53588YSL1QK9ZllzlaeQY68gFttSQ' 
 bot = telebot.TeleBot(API_TOKEN)
 
 MEMORY_CACHE = {} 
