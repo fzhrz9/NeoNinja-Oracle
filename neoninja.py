@@ -12,7 +12,7 @@ from flask import Flask
 app = Flask(__name__)
 @app.route('/')
 def health_check():
-    return "STATUS: OK | NEONINJA ORACLE PROTOCOL (V1.8 ALERT SYSTEM) OPERATIONAL"
+    return "STATUS: OK | NEONINJA ORACLE PROTOCOL (V1.9 SOCIAL INTEL) OPERATIONAL"
 
 def initialize_daemon():
     port = int(os.environ.get("PORT", 8080))
@@ -54,6 +54,18 @@ def verify_on_chain(symbol, cg_data):
         # ⚠️ TAPISAN SWEET SPOT: Minimum $40k LP
         if liquidity_usd < 40000: return None
 
+        # Ambil Social Links dari Dexscreener
+        socials = target_pair.get('info', {}).get('socials', [])
+        websites = target_pair.get('info', {}).get('websites', [])
+        
+        twitter_url = "N/A"
+        telegram_url = "N/A"
+        web_url = websites[0].get('url', 'N/A') if websites else "N/A"
+
+        for soc in socials:
+            if soc.get('type') == 'twitter': twitter_url = soc.get('url')
+            if soc.get('type') == 'telegram': telegram_url = soc.get('url')
+
         rug_endpoint = f"https://api.rugcheck.xyz/v1/tokens/{contract_address}/report"
         rug_data = requests.get(rug_endpoint, timeout=10).json()
         
@@ -72,10 +84,8 @@ def verify_on_chain(symbol, cg_data):
         if liquidity_usd > 100000: lp_status = "🟢"
         else: lp_status = "🟡"
         
-        report = f"✅ **NEONINJA ORACLE | QUANTITATIVE SIGNAL**\n"
-        report += f"*(Multi-Source Data Verification Protocol)*\n\n"
-        
-        report += f"**Asset Identified:** {cg_data['name']} `${symbol.upper()}`\n"
+        # UI BARU: Terus Asset Identified & Social Links
+        report = f"**Asset Identified:** {cg_data['name']} `${symbol.upper()}`\n"
         report += f"`{contract_address}`\n\n"
         
         report += f"📊 **MARKET AGGREGATE DATA (CoinGecko Verified)**\n"
@@ -90,7 +100,11 @@ def verify_on_chain(symbol, cg_data):
         report += f"   Insider Holding: `{insider_holding_pct:.1f}%` (Pass)\n"
         report += f"   Security Score : `{risk_score}` (Safe)\n\n"
         
-        report += f"🔗 **Execution & Terminal:**\n"
+        report += f"🔗 **Social & Community Intel:**\n"
+        report += f"🐦 [Twitter / X]({twitter_url}) | ✈️ [Telegram Group]({telegram_url})\n"
+        report += f"🌐 [Official Website]({web_url})\n\n"
+
+        report += f"🚀 **Execution & Terminal:**\n"
         report += f"🔫 [Trade terminal (BonkBot)](https://t.me/bonkbot_bot?start={contract_address})\n"
         report += f"🦎 [View On CoinGecko](https://www.coingecko.com/en/coins/{cg_data['id']})\n"
         report += f"📊 [View On Dexscreener](https://dexscreener.com/solana/{contract_address})"
@@ -101,7 +115,7 @@ def verify_on_chain(symbol, cg_data):
 
 def neoninja_pipeline(chat_id):
     global SYSTEM_ACTIVE
-    print("\n[SYSTEM] Initializing NeoNinja Oracle Protocol (V1.8 ALERT SYSTEM)...")
+    print("\n[SYSTEM] Initializing NeoNinja Oracle Protocol (V1.9)...")
     
     headers = {
         "accept": "application/json",
@@ -111,7 +125,7 @@ def neoninja_pipeline(chat_id):
     while SYSTEM_ACTIVE:
         try:
             current_time = time.time()
-            print(f"[{datetime.now().strftime('%H:%M:%S')}] [📡] Initializing API Pull (CG VIP Portal)...")
+            print(f"[{datetime.now().strftime('%H:%M:%S')}] [📡] Initializing API Pull...")
             
             all_coins = []
             page = 1
@@ -119,65 +133,37 @@ def neoninja_pipeline(chat_id):
             
             while page <= max_pages:
                 if not SYSTEM_ACTIVE: break
-                
                 cg_url = f"https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&category=solana-ecosystem&order=market_cap_desc&per_page=250&page={page}"
                 cg_response = requests.get(cg_url, headers=headers, timeout=15)
                 
                 if cg_response.status_code == 200:
                     data = cg_response.json()
-                    if not data: 
-                        break
-                    
+                    if not data: break
                     all_coins.extend(data)
-                    print(f"[{datetime.now().strftime('%H:%M:%S')}] [📥] Page {page} retrieved. ({len(all_coins)} items)")
                     page += 1
                     time.sleep(2.0) 
-                elif cg_response.status_code == 429:
-                    print(f"[{datetime.now().strftime('%H:%M:%S')}] [⚠️] CG API Rate Limit Hit.")
-                    # HANTAR ALERT KE TELEGRAM
-                    try: bot.send_message(chat_id, "⚠️ **[SYSTEM ALERT]**\nCoinGecko API Rate Limit dicapai. Sistem berehat sementara waktu.", parse_mode='Markdown')
-                    except: pass
-                    break
-                else:
-                    print(f"[{datetime.now().strftime('%H:%M:%S')}] [❌] CG API Error {cg_response.status_code}.")
-                    break
+                else: break
                     
             if all_coins:
-                print(f"[{datetime.now().strftime('%H:%M:%S')}] [⚙️] {len(all_coins)} Items Retrieved. Starting Multi-Source Verification...")
-                
                 for coin in all_coins:
                     if not SYSTEM_ACTIVE: break
-                    
                     symbol = coin.get('symbol', '')
                     price_change_24h = coin.get('price_change_percentage_24h')
                     ath_change = coin.get('ath_change_percentage')
                     
-                    # ⚠️ TAPISAN SWEET SPOT: Jatuh 10%-60% sehari, Jatuh >35% ATH
                     if price_change_24h is not None and ath_change is not None:
                         if -60 <= price_change_24h <= -10 and ath_change <= -35:
                             if symbol not in MEMORY_CACHE or (current_time - MEMORY_CACHE[symbol]) > 28800: 
-                                
-                                print(f"[{datetime.now().strftime('%H:%M:%S')}] [💎] Target identified: {symbol.upper()}. Verification Protocol initiated...")
                                 report = verify_on_chain(symbol, coin)
-                                
                                 if report:
                                     MEMORY_CACHE[symbol] = current_time
                                     bot.send_message(chat_id, report, parse_mode='Markdown', disable_web_page_preview=True)
-                                
                                 time.sleep(1.5) 
             
-            print(f"[{datetime.now().strftime('%H:%M:%S')}] [⏳] Verification Cycle Complete. Protocol resting for 1 HOUR...\n")
+            print(f"[{datetime.now().strftime('%H:%M:%S')}] [⏳] Cycle Complete. Resting for 1 HOUR...\n")
             time.sleep(3600) 
             
         except Exception as e:
-            error_msg = str(e)[:100] # Potong mesej error supaya tak serabut
-            print(f"[{datetime.now().strftime('%H:%M:%S')}] [❌] Network or System Error: {error_msg}")
-            
-            # HANTAR ALERT ERROR KE TELEGRAM (Kecuali kalau Telegram tu sendiri block/409)
-            if SYSTEM_ACTIVE:
-                try: bot.send_message(chat_id, f"🚨 **[SYSTEM ERROR DIKESAN]**\n\nSistem tergendala disebabkan ralat rangkaian atau server:\n`{error_msg}`\n\n*— Auto-reboot dipicu dalam 30 saat...*", parse_mode='Markdown')
-                except: pass
-                
             time.sleep(30)
 
 @bot.message_handler(commands=['start'])
