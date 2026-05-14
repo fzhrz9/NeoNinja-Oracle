@@ -24,7 +24,7 @@ daemon_thread.start()
 # ==========================================
 # 📡 TELEGRAM & COINGECKO API KEYS
 # ==========================================
-API_TOKEN = '8673710597:AAFDfTRuBb839WE6KKXzh4pX1FxbQtFN0sA' 
+API_TOKEN = '8673710597:AAGD4I53588YSL1QK9ZllzlaeQY68gFttSQ' 
 CG_API_KEY = 'CG-b4VSbfrpCgK5seMpcHssGJe7' # Kunci VIP Pasport CoinGecko
 
 bot = telebot.TeleBot(API_TOKEN)
