@@ -51,7 +51,8 @@ def verify_on_chain(symbol, cg_data):
         contract_address = target_pair['baseToken']['address']
         liquidity_usd = target_pair.get('liquidity', {}).get('usd', 0)
         
-        if liquidity_usd < 30000: return None
+        # ⚠️ TAPISAN SWEET SPOT: Minimum $40k LP
+        if liquidity_usd < 40000: return None
 
         rug_endpoint = f"https://api.rugcheck.xyz/v1/tokens/{contract_address}/report"
         rug_data = requests.get(rug_endpoint, timeout=10).json()
@@ -151,8 +152,9 @@ def neoninja_pipeline(chat_id):
                     price_change_24h = coin.get('price_change_percentage_24h')
                     ath_change = coin.get('ath_change_percentage')
                     
+                    # ⚠️ TAPISAN SWEET SPOT: Jatuh 10%-60% sehari, Jatuh >35% ATH
                     if price_change_24h is not None and ath_change is not None:
-                        if -60 <= price_change_24h <= -5 and ath_change <= -30:
+                        if -60 <= price_change_24h <= -10 and ath_change <= -35:
                             if symbol not in MEMORY_CACHE or (current_time - MEMORY_CACHE[symbol]) > 28800: 
                                 
                                 print(f"[{datetime.now().strftime('%H:%M:%S')}] [💎] Target identified: {symbol.upper()}. Verification Protocol initiated...")
