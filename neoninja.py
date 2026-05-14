@@ -13,7 +13,7 @@ from flask import Flask
 app = Flask(__name__)
 @app.route('/')
 def health_check():
-    return "STATUS: OK | NEONINJA ORACLE PROTOCOL (V2.0 VIP OMNI-SWEEPER) OPERATIONAL"
+    return "STATUS: OK | NEONINJA ORACLE PROTOCOL (V2.1 OMNI-VERSE) OPERATIONAL"
 
 def initialize_daemon():
     port = int(os.environ.get("PORT", 8080))
@@ -41,8 +41,20 @@ NARRATIVES = [
 ]
 CURRENT_NARRATIVE_IDX = 0
 
+# 🗺️ PETA RANTAIAN (Selari dengan Maestro & Dexscreener)
+CHAIN_MAP = {
+    'solana': 'SOL',
+    'ethereum': 'ETH',
+    'bsc': 'BSC',
+    'base': 'BASE',
+    'arbitrum': 'ARB',
+    'avalanche': 'AVAX',
+    'tron': 'TRX',
+    'ton': 'TON'
+}
+
 # ==========================================
-# 🧠 ALGORITHM: OMNI-CHAIN & VIP UI
+# 🧠 ALGORITHM: OMNI-VERSE & VIP UI
 # ==========================================
 def verify_on_chain(symbol, cg_data):
     try:
@@ -54,7 +66,7 @@ def verify_on_chain(symbol, cg_data):
         if not dex_search.get('pairs'): return None, None
         
         target_pair = None
-        allowed_chains = ['solana', 'ethereum', 'bsc', 'base']
+        allowed_chains = list(CHAIN_MAP.keys())
         
         for pair in dex_search['pairs']:
             if pair.get('chainId') in allowed_chains and pair['baseToken']['symbol'].lower() == symbol.lower():
@@ -68,8 +80,10 @@ def verify_on_chain(symbol, cg_data):
         liquidity_usd = target_pair.get('liquidity', {}).get('usd', 0)
         volume_24h = target_pair.get('volume', {}).get('h24', 0)
         
-        # ⚠️ TAPISAN GRED INSTITUSI: Minimum $100k LP & $50k Volume (Koin Aktif)
+        # ⚠️ TAPISAN GRED INSTITUSI: Minimum $100k LP & $50k Volume
         if liquidity_usd < 100000 or volume_24h < 50000: return None, None
+
+        chain_display_name = CHAIN_MAP.get(chain_id, chain_id.upper())
 
         # Social Links dari Dexscreener
         socials = target_pair.get('info', {}).get('socials', [])
@@ -83,7 +97,7 @@ def verify_on_chain(symbol, cg_data):
             if soc.get('type') == 'telegram': telegram_url = soc.get('url')
 
         # Skor Keselamatan Pintar (Solana Sahaja)
-        risk_score = "N/A (Imbas di Terminal)"
+        risk_score = "N/A (Imbas auto di Maestro)"
         insider_status = ""
         insider_holding_pct = 0
         
@@ -104,14 +118,17 @@ def verify_on_chain(symbol, cg_data):
         price_24h_drop = cg_data.get('price_change_percentage_24h', 0)
         current_price = cg_data.get('current_price', 0)
         
+        if liquidity_usd > 250000: lp_status = "🟢"
+        else: lp_status = "🟡"
+
         # ==========================================
-        # 💬 FORMAT TEKS LAPORAN (Tanpa Link Serabut)
+        # 💬 FORMAT TEKS LAPORAN VIP
         # ==========================================
         report = f"**Asset Identified:** {cg_data['name']} `${symbol.upper()}`\n"
         report += f"`{contract_address}`\n\n"
         
         report += f"📊 **MARKET AGGREGATE (Naratif Sektor)**\n"
-        report += f"   Network        : **{chain_id.upper()}**\n"
+        report += f"   Network        : **{chain_display_name}**\n"
         report += f"   Price          : `${current_price}`\n"
         report += f"   Global Rank    : `#{cg_rank}`\n"
         report += f"   Market Cap     : `${market_cap:,.0f}`\n"
@@ -119,7 +136,7 @@ def verify_on_chain(symbol, cg_data):
         report += f"   Diskaun ATH    : `{ath_drop:.2f}%` 📉\n\n"
         
         report += f"⛓️ **ON-CHAIN AUDIT (Dexscreener)**\n"
-        report += f"   Liquidity (LP) : `${liquidity_usd:,.0f}` 🟢\n"
+        report += f"   Liquidity (LP) : `${liquidity_usd:,.0f}` {lp_status}\n"
         report += f"   24H Volume     : `${volume_24h:,.0f}` 🟢{insider_status}\n"
         report += f"   Security Score : {risk_score}\n"
         
@@ -127,15 +144,15 @@ def verify_on_chain(symbol, cg_data):
         # 🎛️ BINA BUTANG (INLINE KEYBOARD)
         # ==========================================
         markup = InlineKeyboardMarkup()
-        markup.row_width = 3 # Max 3 butang sebaris
+        markup.row_width = 3 
         
-        # Butang Terminal (Tingkat 1)
+        # Butang Terminal (Tingkat 1) - Smart Routing
         if chain_id == 'solana':
             term_url = f"https://t.me/bonkbot_bot?start={contract_address}"
-            btn_term = InlineKeyboardButton("🔫 Beli di BonkBot (Solana)", url=term_url)
+            btn_term = InlineKeyboardButton(f"🔫 Beli di BonkBot ({chain_display_name})", url=term_url)
         else:
             term_url = f"https://t.me/maestro?start={contract_address}"
-            btn_term = InlineKeyboardButton(f"🦄 Beli di Maestro ({chain_id.upper()})", url=term_url)
+            btn_term = InlineKeyboardButton(f"🦄 Beli di Maestro ({chain_display_name})", url=term_url)
         markup.add(btn_term)
 
         # Butang Sosial (Tingkat 2)
@@ -159,7 +176,7 @@ def verify_on_chain(symbol, cg_data):
 
 def neoninja_pipeline(chat_id):
     global SYSTEM_ACTIVE, CURRENT_NARRATIVE_IDX
-    print("\n[SYSTEM] Initializing V2.0 VIP OMNI-SWEEPER PROTOCOL...")
+    print("\n[SYSTEM] Initializing V2.1 VIP OMNI-VERSE PROTOCOL...")
     
     headers = {
         "accept": "application/json",
@@ -174,7 +191,7 @@ def neoninja_pipeline(chat_id):
             
             all_coins = []
             page = 1
-            max_pages = 2 # Tak perlu banyak page sebab kita filter MC $5M-$150M
+            max_pages = 3 # Naik sikit ke 3 muka surat sebab kita cover banyak chain
             
             while page <= max_pages:
                 if not SYSTEM_ACTIVE: break
@@ -210,16 +227,14 @@ def neoninja_pipeline(chat_id):
                                 if report and markup:
                                     MEMORY_CACHE[symbol] = current_time
                                     header_msg = f"🌟 **NARRATIVE ALERT: {active_narrative.replace('-', ' ').upper()}**\n\n"
-                                    # Hantar mesej berserta Butang Inline (reply_markup)
                                     bot.send_message(chat_id, header_msg + report, parse_mode='Markdown', reply_markup=markup, disable_web_page_preview=True)
                                 
                                 time.sleep(1.5) 
             
-            # Tukar Syif Naratif (Sektor Seterusnya)
             CURRENT_NARRATIVE_IDX = (CURRENT_NARRATIVE_IDX + 1) % len(NARRATIVES)
             
             print(f"[{datetime.now().strftime('%H:%M:%S')}] [⏳] Sector {active_narrative.upper()} Complete. Resting for 10 MINUTES...\n")
-            time.sleep(600) # Rehat 10 minit sebelum cari naratif seterusnya
+            time.sleep(600) 
             
         except Exception as e:
             time.sleep(30)
@@ -234,9 +249,9 @@ def engage_scanner(message):
     if SYSTEM_ACTIVE: return
     SYSTEM_ACTIVE = True
     
-    intro_msg = "🟢 **NEONINJA— VIP OMNI-SWEEPER ACTIVE**\n"
-    intro_msg += "*— Memburu 10 Naratif Gergasi (AI, DePIN, RWA, DeFi...)*\n"
-    intro_msg += "*— Rantaian: SOL, ETH, BSC, BASE*\n"
+    intro_msg = "🟢 **NEONINJA— VIP OMNI-VERSE ACTIVE**\n"
+    intro_msg += "*— Memburu 10 Naratif Gergasi*\n"
+    intro_msg += "*— Radar dibuka untuk 8 Rantaian: SOL, ETH, BSC, BASE, ARB, AVAX, TRX, TON*\n"
     intro_msg += "*— Menyelam sekarang...*"
     
     bot.reply_to(message, intro_msg)
