@@ -1,4 +1,5 @@
 import telebot
+from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 import requests
 import time
 import os
@@ -12,7 +13,7 @@ from flask import Flask
 app = Flask(__name__)
 @app.route('/')
 def health_check():
-    return "STATUS: OK | NEONINJA ORACLE PROTOCOL (V1.9 SOCIAL INTEL) OPERATIONAL"
+    return "STATUS: OK | NEONINJA ORACLE PROTOCOL (V2.0 VIP OMNI-SWEEPER) OPERATIONAL"
 
 def initialize_daemon():
     port = int(os.environ.get("PORT", 8080))
@@ -32,90 +33,133 @@ bot = telebot.TeleBot(API_TOKEN)
 MEMORY_CACHE = {} 
 SYSTEM_ACTIVE = False 
 
+# 🌐 KITARAN NARATIF GERGASI (10 Sektor)
+NARRATIVES = [
+    'artificial-intelligence', 'ai-agents', 'infrastructure', 'depin', 
+    'internet-of-things-iot', 'decentralized-finance-defi', 
+    'layer-1', 'layer-2', 'china-concept', 'real-world-assets-rwa'
+]
+CURRENT_NARRATIVE_IDX = 0
+
 # ==========================================
-# 🧠 ALGORITHM: HYBRID COINGECKO + DEXSCREENER
+# 🧠 ALGORITHM: OMNI-CHAIN & VIP UI
 # ==========================================
 def verify_on_chain(symbol, cg_data):
     try:
+        # Tapisan Awal CoinGecko: Market Cap $5M - $150M sahaja (Zon Mid-Cap)
+        market_cap = cg_data.get('market_cap', 0)
+        if not (5000000 <= market_cap <= 150000000): return None, None
+
         dex_search = requests.get(f"https://api.dexscreener.com/latest/dex/search?q={symbol}", timeout=10).json()
-        if not dex_search.get('pairs'): return None
+        if not dex_search.get('pairs'): return None, None
         
         target_pair = None
+        allowed_chains = ['solana', 'ethereum', 'bsc', 'base']
+        
         for pair in dex_search['pairs']:
-            if pair.get('chainId') == 'solana' and pair['baseToken']['symbol'].lower() == symbol.lower():
+            if pair.get('chainId') in allowed_chains and pair['baseToken']['symbol'].lower() == symbol.lower():
                 target_pair = pair
                 break
                 
-        if not target_pair: return None
+        if not target_pair: return None, None
         
+        chain_id = target_pair.get('chainId')
         contract_address = target_pair['baseToken']['address']
         liquidity_usd = target_pair.get('liquidity', {}).get('usd', 0)
+        volume_24h = target_pair.get('volume', {}).get('h24', 0)
         
-        # ⚠️ TAPISAN SWEET SPOT: Minimum $40k LP
-        if liquidity_usd < 40000: return None
+        # ⚠️ TAPISAN GRED INSTITUSI: Minimum $100k LP & $50k Volume (Koin Aktif)
+        if liquidity_usd < 100000 or volume_24h < 50000: return None, None
 
-        # Ambil Social Links dari Dexscreener
+        # Social Links dari Dexscreener
         socials = target_pair.get('info', {}).get('socials', [])
         websites = target_pair.get('info', {}).get('websites', [])
         
-        twitter_url = "N/A"
-        telegram_url = "N/A"
-        web_url = websites[0].get('url', 'N/A') if websites else "N/A"
+        twitter_url, telegram_url, web_url = None, None, None
+        if websites: web_url = websites[0].get('url')
 
         for soc in socials:
             if soc.get('type') == 'twitter': twitter_url = soc.get('url')
             if soc.get('type') == 'telegram': telegram_url = soc.get('url')
 
-        rug_endpoint = f"https://api.rugcheck.xyz/v1/tokens/{contract_address}/report"
-        rug_data = requests.get(rug_endpoint, timeout=10).json()
+        # Skor Keselamatan Pintar (Solana Sahaja)
+        risk_score = "N/A (Imbas di Terminal)"
+        insider_status = ""
+        insider_holding_pct = 0
         
-        risk_score = rug_data.get('score', 0)
-        if risk_score >= 500: return None 
-        
-        top_holders = rug_data.get('topHolders', [])
-        insider_holding_pct = sum([h.get('pct', 0) for h in top_holders[:10]])
-        if insider_holding_pct > 40: return None 
+        if chain_id == 'solana':
+            rug_endpoint = f"https://api.rugcheck.xyz/v1/tokens/{contract_address}/report"
+            rug_data = requests.get(rug_endpoint, timeout=10).json()
+            risk_score = rug_data.get('score', 0)
+            if risk_score >= 500: return None, None
+            
+            top_holders = rug_data.get('topHolders', [])
+            insider_holding_pct = sum([h.get('pct', 0) for h in top_holders[:10]])
+            if insider_holding_pct > 40: return None, None
+            insider_status = f"\n   Insider Holding: `{insider_holding_pct:.1f}%` (Pass)"
+            risk_score = f"`{risk_score}` (Safe)"
 
         cg_rank = cg_data.get('market_cap_rank', 'N/A')
         ath_drop = cg_data.get('ath_change_percentage', 0)
         price_24h_drop = cg_data.get('price_change_percentage_24h', 0)
         current_price = cg_data.get('current_price', 0)
         
-        if liquidity_usd > 100000: lp_status = "🟢"
-        else: lp_status = "🟡"
-        
-        # UI BARU: Terus Asset Identified & Social Links
+        # ==========================================
+        # 💬 FORMAT TEKS LAPORAN (Tanpa Link Serabut)
+        # ==========================================
         report = f"**Asset Identified:** {cg_data['name']} `${symbol.upper()}`\n"
         report += f"`{contract_address}`\n\n"
         
-        report += f"📊 **MARKET AGGREGATE DATA (CoinGecko Verified)**\n"
+        report += f"📊 **MARKET AGGREGATE (Naratif Sektor)**\n"
+        report += f"   Network        : **{chain_id.upper()}**\n"
         report += f"   Price          : `${current_price}`\n"
-        report += f"   Global Position: `#{cg_rank}`\n"
-        report += f"   Market Cap     : `${cg_data.get('market_cap', 0):,.0f}`\n"
+        report += f"   Global Rank    : `#{cg_rank}`\n"
+        report += f"   Market Cap     : `${market_cap:,.0f}`\n"
         report += f"   Diskaun 24H    : `{price_24h_drop:.2f}%` 🩸\n"
         report += f"   Diskaun ATH    : `{ath_drop:.2f}%` 📉\n\n"
         
-        report += f"⛓️ **ON-CHAIN AUDIT (Dexscreener Verified)**\n"
-        report += f"   Real Liquidity : `${liquidity_usd:,.0f}` {lp_status}\n"
-        report += f"   Insider Holding: `{insider_holding_pct:.1f}%` (Pass)\n"
-        report += f"   Security Score : `{risk_score}` (Safe)\n\n"
+        report += f"⛓️ **ON-CHAIN AUDIT (Dexscreener)**\n"
+        report += f"   Liquidity (LP) : `${liquidity_usd:,.0f}` 🟢\n"
+        report += f"   24H Volume     : `${volume_24h:,.0f}` 🟢{insider_status}\n"
+        report += f"   Security Score : {risk_score}\n"
         
-        report += f"🔗 **Social & Community Intel:**\n"
-        report += f"🐦 [Twitter / X]({twitter_url}) | ✈️ [Telegram Group]({telegram_url})\n"
-        report += f"🌐 [Official Website]({web_url})\n\n"
+        # ==========================================
+        # 🎛️ BINA BUTANG (INLINE KEYBOARD)
+        # ==========================================
+        markup = InlineKeyboardMarkup()
+        markup.row_width = 3 # Max 3 butang sebaris
+        
+        # Butang Terminal (Tingkat 1)
+        if chain_id == 'solana':
+            term_url = f"https://t.me/bonkbot_bot?start={contract_address}"
+            btn_term = InlineKeyboardButton("🔫 Beli di BonkBot (Solana)", url=term_url)
+        else:
+            term_url = f"https://t.me/maestro?start={contract_address}"
+            btn_term = InlineKeyboardButton(f"🦄 Beli di Maestro ({chain_id.upper()})", url=term_url)
+        markup.add(btn_term)
 
-        report += f"🚀 **Execution & Terminal:**\n"
-        report += f"🔫 [Trade terminal (BonkBot)](https://t.me/bonkbot_bot?start={contract_address})\n"
-        report += f"🦎 [View On CoinGecko](https://www.coingecko.com/en/coins/{cg_data['id']})\n"
-        report += f"📊 [View On Dexscreener](https://dexscreener.com/solana/{contract_address})"
+        # Butang Sosial (Tingkat 2)
+        soc_buttons = []
+        if twitter_url: soc_buttons.append(InlineKeyboardButton("🐦 Twitter", url=twitter_url))
+        if telegram_url: soc_buttons.append(InlineKeyboardButton("✈️ Telegram", url=telegram_url))
+        if web_url: soc_buttons.append(InlineKeyboardButton("🌐 Website", url=web_url))
+        if soc_buttons: markup.add(*soc_buttons)
+
+        # Butang Analisis (Tingkat 3)
+        cg_url = f"https://www.coingecko.com/en/coins/{cg_data['id']}"
+        dex_url = f"https://dexscreener.com/{chain_id}/{contract_address}"
+        markup.add(
+            InlineKeyboardButton("🦎 CoinGecko", url=cg_url),
+            InlineKeyboardButton("📊 Dexscreener", url=dex_url)
+        )
         
-        return report
+        return report, markup
     except Exception as e:
-        return None
+        return None, None
 
 def neoninja_pipeline(chat_id):
-    global SYSTEM_ACTIVE
-    print("\n[SYSTEM] Initializing NeoNinja Oracle Protocol (V1.9)...")
+    global SYSTEM_ACTIVE, CURRENT_NARRATIVE_IDX
+    print("\n[SYSTEM] Initializing V2.0 VIP OMNI-SWEEPER PROTOCOL...")
     
     headers = {
         "accept": "application/json",
@@ -125,15 +169,17 @@ def neoninja_pipeline(chat_id):
     while SYSTEM_ACTIVE:
         try:
             current_time = time.time()
-            print(f"[{datetime.now().strftime('%H:%M:%S')}] [📡] Initializing API Pull...")
+            active_narrative = NARRATIVES[CURRENT_NARRATIVE_IDX]
+            print(f"\n[{datetime.now().strftime('%H:%M:%S')}] [📡] HUNTING SECTOR: {active_narrative.upper()}...")
             
             all_coins = []
             page = 1
-            max_pages = 5 
+            max_pages = 2 # Tak perlu banyak page sebab kita filter MC $5M-$150M
             
             while page <= max_pages:
                 if not SYSTEM_ACTIVE: break
-                cg_url = f"https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&category=solana-ecosystem&order=market_cap_desc&per_page=250&page={page}"
+                
+                cg_url = f"https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&category={active_narrative}&order=market_cap_desc&per_page=250&page={page}"
                 cg_response = requests.get(cg_url, headers=headers, timeout=15)
                 
                 if cg_response.status_code == 200:
@@ -142,6 +188,9 @@ def neoninja_pipeline(chat_id):
                     all_coins.extend(data)
                     page += 1
                     time.sleep(2.0) 
+                elif cg_response.status_code == 429:
+                    print(f"[{datetime.now().strftime('%H:%M:%S')}] [⚠️] CG API Rate Limit Hit.")
+                    break
                 else: break
                     
             if all_coins:
@@ -152,16 +201,25 @@ def neoninja_pipeline(chat_id):
                     ath_change = coin.get('ath_change_percentage')
                     
                     if price_change_24h is not None and ath_change is not None:
-                        if -60 <= price_change_24h <= -10 and ath_change <= -35:
+                        # ⚠️ TAPISAN HARGA: Jatuh 5%-25% sehari, ATH jatuh 30%-80%
+                        if -25 <= price_change_24h <= -5 and -80 <= ath_change <= -30:
                             if symbol not in MEMORY_CACHE or (current_time - MEMORY_CACHE[symbol]) > 28800: 
-                                report = verify_on_chain(symbol, coin)
-                                if report:
+                                
+                                report, markup = verify_on_chain(symbol, coin)
+                                
+                                if report and markup:
                                     MEMORY_CACHE[symbol] = current_time
-                                    bot.send_message(chat_id, report, parse_mode='Markdown', disable_web_page_preview=True)
+                                    header_msg = f"🌟 **NARRATIVE ALERT: {active_narrative.replace('-', ' ').upper()}**\n\n"
+                                    # Hantar mesej berserta Butang Inline (reply_markup)
+                                    bot.send_message(chat_id, header_msg + report, parse_mode='Markdown', reply_markup=markup, disable_web_page_preview=True)
+                                
                                 time.sleep(1.5) 
             
-            print(f"[{datetime.now().strftime('%H:%M:%S')}] [⏳] Cycle Complete. Resting for 1 HOUR...\n")
-            time.sleep(3600) 
+            # Tukar Syif Naratif (Sektor Seterusnya)
+            CURRENT_NARRATIVE_IDX = (CURRENT_NARRATIVE_IDX + 1) % len(NARRATIVES)
+            
+            print(f"[{datetime.now().strftime('%H:%M:%S')}] [⏳] Sector {active_narrative.upper()} Complete. Resting for 10 MINUTES...\n")
+            time.sleep(600) # Rehat 10 minit sebelum cari naratif seterusnya
             
         except Exception as e:
             time.sleep(30)
@@ -175,7 +233,13 @@ def engage_scanner(message):
     global SYSTEM_ACTIVE
     if SYSTEM_ACTIVE: return
     SYSTEM_ACTIVE = True
-    bot.reply_to(message, "🟢 **NEONINJA— VVIP ACTIVE**\n*— Algoritma start.*")
+    
+    intro_msg = "🟢 **NEONINJA— VIP OMNI-SWEEPER ACTIVE**\n"
+    intro_msg += "*— Memburu 10 Naratif Gergasi (AI, DePIN, RWA, DeFi...)*\n"
+    intro_msg += "*— Rantaian: SOL, ETH, BSC, BASE*\n"
+    intro_msg += "*— Menyelam sekarang...*"
+    
+    bot.reply_to(message, intro_msg)
     threading.Thread(target=neoninja_pipeline, args=(message.chat.id,), daemon=True).start()
 
 @bot.message_handler(commands=['stop'])
