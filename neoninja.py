@@ -144,7 +144,7 @@ def verify_on_chain(symbol, cg_data):
         # 🎛️ BINA BUTANG (INLINE KEYBOARD)
         # ==========================================
         markup = InlineKeyboardMarkup()
-        markup.row_width = 3 
+        markup.row_width = 2 # Set kepada 2 supaya butang nampak stabil/seimbang
         
         # Butang Terminal (Tingkat 1) - Smart Routing
         if chain_id == 'solana':
@@ -153,7 +153,13 @@ def verify_on_chain(symbol, cg_data):
         else:
             term_url = f"https://t.me/maestro?start={contract_address}"
             btn_term = InlineKeyboardButton(f"🦄 Beli di Maestro ({chain_display_name})", url=term_url)
+            
+        # 📰 Butang Radar Berita (X) - Carian Live Cashtag
+        news_search_url = f"https://twitter.com/search?q=%24{symbol}&src=typed_query&f=live"
+        btn_news = InlineKeyboardButton("📰 Radar Berita (X)", url=news_search_url)
+
         markup.add(btn_term)
+        markup.add(btn_news)
 
         # Butang Sosial (Tingkat 2)
         soc_buttons = []
