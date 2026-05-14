@@ -12,7 +12,7 @@ from flask import Flask
 app = Flask(__name__)
 @app.route('/')
 def health_check():
-    return "STATUS: OK | NEONINJA ORACLE PROTOCOL (V1.7 MINIMALIST PRO) OPERATIONAL"
+    return "STATUS: OK | NEONINJA ORACLE PROTOCOL (V1.8 ALERT SYSTEM) OPERATIONAL"
 
 def initialize_daemon():
     port = int(os.environ.get("PORT", 8080))
@@ -71,7 +71,6 @@ def verify_on_chain(symbol, cg_data):
         if liquidity_usd > 100000: lp_status = "🟢"
         else: lp_status = "🟡"
         
-        # 💎 FORMULASI LAPORAN VIP (MINIMALIST PRO ALERT)
         report = f"✅ **NEONINJA ORACLE | QUANTITATIVE SIGNAL**\n"
         report += f"*(Multi-Source Data Verification Protocol)*\n\n"
         
@@ -101,7 +100,7 @@ def verify_on_chain(symbol, cg_data):
 
 def neoninja_pipeline(chat_id):
     global SYSTEM_ACTIVE
-    print("\n[SYSTEM] Initializing NeoNinja Oracle Protocol (V1.7 MINIMALIST PRO)...")
+    print("\n[SYSTEM] Initializing NeoNinja Oracle Protocol (V1.8 ALERT SYSTEM)...")
     
     headers = {
         "accept": "application/json",
@@ -115,7 +114,7 @@ def neoninja_pipeline(chat_id):
             
             all_coins = []
             page = 1
-            max_pages = 5 # Jimat API: Ambil Top 1250 coins sahaja
+            max_pages = 5 
             
             while page <= max_pages:
                 if not SYSTEM_ACTIVE: break
@@ -133,10 +132,13 @@ def neoninja_pipeline(chat_id):
                     page += 1
                     time.sleep(2.0) 
                 elif cg_response.status_code == 429:
-                    print(f"[{datetime.now().strftime('%H:%M:%S')}] [⚠️] CG API Rate Limit Hit (VIP Protocol Backoff Engaged).")
+                    print(f"[{datetime.now().strftime('%H:%M:%S')}] [⚠️] CG API Rate Limit Hit.")
+                    # HANTAR ALERT KE TELEGRAM
+                    try: bot.send_message(chat_id, "⚠️ **[SYSTEM ALERT]**\nCoinGecko API Rate Limit dicapai. Sistem berehat sementara waktu.", parse_mode='Markdown')
+                    except: pass
                     break
                 else:
-                    print(f"[{datetime.now().strftime('%H:%M:%S')}] [❌] CG API Error {cg_response.status_code}. Skipping Page.")
+                    print(f"[{datetime.now().strftime('%H:%M:%S')}] [❌] CG API Error {cg_response.status_code}.")
                     break
                     
             if all_coins:
@@ -162,12 +164,18 @@ def neoninja_pipeline(chat_id):
                                 
                                 time.sleep(1.5) 
             
-            # Jimat API: Rehat 1 JAM (3600 saat) supaya API 10k tahan sebulan
             print(f"[{datetime.now().strftime('%H:%M:%S')}] [⏳] Verification Cycle Complete. Protocol resting for 1 HOUR...\n")
             time.sleep(3600) 
             
         except Exception as e:
-            print(f"[{datetime.now().strftime('%H:%M:%S')}] [❌] Network or System Error. Resetting in 30s...")
+            error_msg = str(e)[:100] # Potong mesej error supaya tak serabut
+            print(f"[{datetime.now().strftime('%H:%M:%S')}] [❌] Network or System Error: {error_msg}")
+            
+            # HANTAR ALERT ERROR KE TELEGRAM (Kecuali kalau Telegram tu sendiri block/409)
+            if SYSTEM_ACTIVE:
+                try: bot.send_message(chat_id, f"🚨 **[SYSTEM ERROR DIKESAN]**\n\nSistem tergendala disebabkan ralat rangkaian atau server:\n`{error_msg}`\n\n*— Auto-reboot dipicu dalam 30 saat...*", parse_mode='Markdown')
+                except: pass
+                
             time.sleep(30)
 
 @bot.message_handler(commands=['start'])
@@ -179,7 +187,7 @@ def engage_scanner(message):
     global SYSTEM_ACTIVE
     if SYSTEM_ACTIVE: return
     SYSTEM_ACTIVE = True
-    bot.reply_to(message, "🟢 **[NEONINJA] — VVIP ACTIVATE DIAKTIFKAN**\n*— Analisis algoritma start.*")
+    bot.reply_to(message, "🟢 **NEONINJA— VVIP ACTIVE**\n*— Algoritma start.*")
     threading.Thread(target=neoninja_pipeline, args=(message.chat.id,), daemon=True).start()
 
 @bot.message_handler(commands=['stop'])
