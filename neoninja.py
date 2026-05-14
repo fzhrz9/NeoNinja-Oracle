@@ -249,10 +249,7 @@ def engage_scanner(message):
     if SYSTEM_ACTIVE: return
     SYSTEM_ACTIVE = True
     
-    intro_msg = "🟢 **NEONINJA— VIP OMNI-VERSE ACTIVE**\n"
-    intro_msg += "*— Memburu 10 Naratif Gergasi*\n"
-    intro_msg += "*— Radar dibuka untuk 8 Rantaian: SOL, ETH, BSC, BASE, ARB, AVAX, TRX, TON*\n"
-    intro_msg += "*— Menyelam sekarang...*"
+    intro_msg = "🟢 **NEONINJA— VIP ACTIVE**"
     
     bot.reply_to(message, intro_msg)
     threading.Thread(target=neoninja_pipeline, args=(message.chat.id,), daemon=True).start()
@@ -261,7 +258,7 @@ def engage_scanner(message):
 def disengage_scanner(message):
     global SYSTEM_ACTIVE
     SYSTEM_ACTIVE = False
-    bot.reply_to(message, "🔴 **Ninja Mode Disconnected**")
+    bot.reply_to(message, "🔴 Ninja Mode Disconnected")
 
 if __name__ == "__main__":
     bot.polling(none_stop=True)
