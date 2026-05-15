@@ -9,7 +9,7 @@ from groq import Groq  # TUKAR KE GROQ
 # =====================================================================
 # 1. KONFIGURASI & API KEYS (FINAL LOCK)
 # =====================================================================
-TELEGRAM_BOT_TOKEN = "TOKEN_BOT_KAU"
+TELEGRAM_BOT_TOKEN = "8673710597:AAGD4I53588YSL1QK9ZllzlaeQY68gFttSQ"
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")  # GUNA KEY DARI console.groq.com
 VIP_CHANNEL_ID = "-1003943365561"
 ADMIN_ID = "970309251"
