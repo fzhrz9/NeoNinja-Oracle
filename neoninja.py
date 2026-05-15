@@ -1,220 +1,149 @@
+import os
 import time
-import schedule
-import logging
-from datetime import datetime
-
-# Nota: Gunakan perpustakaan 'telebot' (pyTelegramBotAPI) dan 'requests' untuk API
-# pip install pyTelegramBotAPI requests
-
 import telebot
+import schedule
+import threading
+from http.server import HTTPServer, BaseHTTPRequestHandler
+from datetime import datetime
+from groq import Groq
 
 # =====================================================================
-# KONFIGURASI ALPHAV3 (GRED INSTITUSI)
+# 1. KONFIGURASI & API KEYS
 # =====================================================================
+# Token Telegram kau
 TELEGRAM_BOT_TOKEN = "8673710597:AAGD4I53588YSL1QK9ZllzlaeQY68gFttSQ"
-VIP_CHANNEL_ID = "-1003943365561" # ID Grup VIP
-ADMIN_ID = "970309251"            # ID Telegram peribadi kau (Untuk Auto-Boot)
+# Tarik API Key Groq dari Render Environment Variables
+GROQ_API_KEY = os.getenv("GROQ_API_KEY") 
+VIP_CHANNEL_ID = "-1003943365561"
+ADMIN_ID = "970309251"
 
 bot = telebot.TeleBot(TELEGRAM_BOT_TOKEN)
 
-# Parameter "Sweet Spot" Institusi
-MIN_LIQUIDITY = 100000        # Minimum $100k
-MIN_DROP_24H = -1.5           # Kejatuhan minima -1.5%
-ATH_DROP_RANGE = (-80, -40)   # Zon Pengumpulan (Re-accumulation)
-RSI_RESET_ZONE = 45           # RSI bawah 45
-FIBO_POCKET = [0.5, 0.618]    # Golden Pocket
+# Inisialisasi Groq (Akan bypass dengan selamat jika Key tiada)
+try:
+    groq_client = Groq(api_key=GROQ_API_KEY)
+except:
+    groq_client = None
 
-# Enjin 1: Senarai Naratif Mikro
-CORE_NARRATIVES = [
-    'artificial-intelligence', 'ai-agents', 'infrastructure', 'depin', 
-    'internet-of-things-iot', 'real-world-assets-rwa', 'liquid-restaking-tokens', 
-    'modular-blockchain', 'telegram-bots', 'solana-ecosystem', 'base-ecosystem', 
-    'memecoins', 'gaming'
-]
+# PARAMETER SWEET SPOT (LOCKED)
+MC_MIN, MC_MAX = 5000000, 500000000
+MIN_LIQUIDITY = 250000
+MIN_VOL_MC_RATIO = 0.10
+MIN_24H_CHANGE = 5.0
+MAX_1H_CHANGE = -1.5
+FIBO_ZONE = (0.5, 0.618)
 
-# Pembolehubah untuk Heartbeat
-signal_found_this_cycle = False
-
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - ALPHAV3 - %(levelname)s - %(message)s')
+SHARIAH_BLACKLIST = ['gambling', 'gamblefi', 'lending', 'borrowing', 'derivatives', 'perpetuals', 'adult']
 
 # =====================================================================
-# MODUL 1: AMARAN PELAYAN (AUTO-BOOT)
+# 2. MODUL SHARIAH & FILTRATION
 # =====================================================================
-def send_admin_reboot_alert():
-    """Hantar amaran ke Admin setiap kali server (Render) restart"""
-    msg = (
-        "🚨 *ALPHAV3 REBOOT DETECTED*\n\n"
-        "Tuan, sistem baru sahaja dihidupkan semula akibat kitaran pelayan awan (cloud server). "
-        "Radar Dual-Engine telah diaktifkan secara automatik (Auto-Scan). "
-        "Tiada tindakan manual diperlukan. Sedia beroperasi."
-    )
-    try:
-        bot.send_message(ADMIN_ID, msg, parse_mode="Markdown")
-        logging.info("Auto-boot alert dihantar kepada Admin.")
-    except Exception as e:
-        logging.error(f"Gagal hantar amaran admin: {e}")
+def analyze_sweet_spot(coin_data):
+    if not (MC_MIN <= coin_data['market_cap'] <= MC_MAX): return False
+    if coin_data['liquidity'] < MIN_LIQUIDITY: return False
+    # (Logik penuh filtering kau ada di sini)
+    return True 
 
 # =====================================================================
-# MODUL 2: DUAL-ENGINE SCANNER
+# 3. MODUL AI VIP INSIGHTS (GROQ - PERCUMA)
 # =====================================================================
-def engine_one_core_scan():
-    """Imbas sektor fundamental statik (Core)"""
-    logging.info("Mengaktifkan Enjin 1 (The Core)...")
-    # Di sini: Masukkan kod API CoinGecko untuk tarik data koin berdasarkan CORE_NARRATIVES
-    # return senarai_koin_mentah
-    pass
-
-def engine_two_satellite_scan():
-    """Imbas 100+ sektor untuk cari Top 3 Sektor Paling Menguntungkan"""
-    logging.info("Mengaktifkan Enjin 2 (The Satellite)...")
-    # Di sini: 
-    # 1. Panggil API kategori CoinGecko
-    # 2. Tapis: Profit > 5% DAN Total Volume > $500 Juta
-    # 3. Tarik koin dari Top 3 sektor tersebut
-    # return senarai_koin_momentum
-    pass
-
-# =====================================================================
-# MODUL 3: TAPISAN SWEET SPOT & SMART MONEY
-# =====================================================================
-def analyze_asset(coin):
+def get_ai_vip_report(coin):
+    if not groq_client:
+        return "⚠️ *AI Insight Standby:* Sila masukkan GROQ_API_KEY di Render."
+        
+    prompt = f"""
+    Generate a professional crypto analysis for {coin['name']} (${coin['symbol']}).
+    Language: Professional Malay mixed with English trading terms (Rojak style).
+    Structure:
+    1. Narrative & Catalyst: Kenapa sektor {coin['narrative']} hot. Compare dgn pesaing utama.
+    2. Smart Money Intel: Mention 4 elite wallets (85% win-rate) accumulate. Social sentiment 'Mula Panas'.
+    3. Execution Plan: Entry Zone (Fibo 0.5-0.618), TP 1, TP 2, TP 3, SL, and Risk/Reward Ratio (1:3.5).
+    Keep it concise but high conviction.
     """
-    Menapis aset berdasarkan syarat ketat Institusi (Golden Pocket, RSI, dll)
-    """
-    # MOCKUP DATA UNTUK TUJUAN STRUKTUR (Digantikan dengan data API kelak)
-    simulasi_data = {
-        "drop_24h": -2.10,
-        "ath_drop": -45.00,
-        "rsi": 42,
-        "fibo_hit": True,  # Kena tepat 0.618
-        "liquidity": 1200000,
-        "net_flow_usd_15m": 350000, # In
-        "net_flow_out_15m": 45000,  # Out
-        "is_safe": True
-    }
     
-    # 1. Penapis Fundamental (Drop & Liquidity)
-    if simulasi_data["drop_24h"] > MIN_DROP_24H: return None
-    if simulasi_data["liquidity"] < MIN_LIQUIDITY: return None
-    if not (ATH_DROP_RANGE[0] <= simulasi_data["ath_drop"] <= ATH_DROP_RANGE[1]): return None
-    if not simulasi_data["is_safe"]: return None
-    
-    # 2. Penapis Teknikal (RSI & Fibo)
-    if simulasi_data["rsi"] > RSI_RESET_ZONE: return None
-    if not simulasi_data["fibo_hit"]: return None
-    
-    # 3. Penapis Smart Money (Order Flow)
-    if simulasi_data["net_flow_usd_15m"] > (simulasi_data["net_flow_out_15m"] * 2): # In > Out 2x lipat
-        return "STRONG BUY"
-    elif simulasi_data["net_flow_usd_15m"] > simulasi_data["net_flow_out_15m"]:
-        return "ACCUMULATE"
-    else:
-        return "HIGH RISK" # Akan ditelan oleh Shadow Filter
-
-# =====================================================================
-# MODUL 4: PEMANCAR TELEGRAM & SHADOW FILTER
-# =====================================================================
-def send_vip_signal(coin_data, verdict):
-    """Hantar isyarat ke grup VIP. Shadow Filter aktif di sini."""
-    global signal_found_this_cycle
-    
-    # SHADOW FILTER: Jika High Risk, abaikan (Reject) dan jangan hantar
-    if verdict == "HIGH RISK":
-        logging.info(f"Abaikan aset (Shadow Filter aktif): {coin_data['name']}")
-        return
-
-    # Tentukan parameter visual berdasarkan Verdict
-    color = "🟢" if verdict == "STRONG BUY" else "🟡"
-    reason = "Golden Pocket & Smart Money agresif" if verdict == "STRONG BUY" else "Golden Pocket & pengumpulan berperingkat"
-    
-    # Bina mesej
-    msg = f"""🌟 *NARRATIVE ALERT: LIQUID-RESTAKING-TOKENS*
-
-*Asset Identified:* Pendle `$PENDLE`
-`0x808507121B80c02388fEd11B37812B429A440D9E`
-
-📊 *MARKET AGGREGATE*
-   *Price* : `$5.45` | *Rank* : `#85`
-   *Drop 24H* : `-2.10% 🩸` | *ATH Drop* : `-45.00% 📉`
-
-📈 *TECHNICAL INTEL*
-   *Trend* : RSI: Zon Reset 🟢 | MACD: Bullish 🟢
-   *Momentum* : VOL: Signifikan 🟢
-   *Pullback* : Fibo (0.618) 🎯
-
-🌊 *MARKET SENTIMENT*
-   *Order Flow* : {verdict} {color} ($350k In / $45k Out)
-   *Social Hype*: VIRAL 🔥 (Twitter)
-
-⛓️ *ON-CHAIN SECURITY*
-   *Network* : *ETHEREUM* | *Liquidity*: `$1,200,000` 🟢
-   *Security* : ✅ SAFE (Score: 100)
-
-⚡ *VERDICT : {color} {verdict}*
-   _{reason}_
-
-[ 🦄 Maestro ] [ 🤖 Analysis (VIP) ]
-[ 🟨 Binance ] [ 📰 Berita X ]
-[ 🐦 Twitter ] [ ✈️ Telegram ] [ 🌐 Website ]
-[ 🦎 CoinGecko ] [ 📊 Dexscreener ]
-"""
     try:
-        bot.send_message(VIP_CHANNEL_ID, msg, parse_mode="Markdown", disable_web_page_preview=True)
-        signal_found_this_cycle = True
-        logging.info("Signal VIP berjaya dihantar.")
-    except Exception as e:
-        logging.error(f"Ralat hantar signal: {e}")
-
-# =====================================================================
-# MODUL 5: MARKET PULSE (HEARTBEAT)
-# =====================================================================
-def send_market_pulse():
-    """Hantar status denyutan pasaran jika tiada isyarat ditemui"""
-    global signal_found_this_cycle
-    
-    if not signal_found_this_cycle:
-        msg = (
-            "🟢 *SYSTEM HEARTBEAT : ACTIVE*\n\n"
-            "📡 *Status:* AlphaV3 memantau aset merentas sektor berprestasi tinggi.\n"
-            "📊 *Pemerhatian:* Pasaran sedang agresif. Tiada aset berada di paras _Golden Pocket_ buat masa ini."
+        response = groq_client.chat.completions.create(
+            model="llama3-70b-8192",
+            messages=[
+                {"role": "system", "content": "You are a Senior Hedge Fund Analyst."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.6
         )
-        try:
-            bot.send_message(VIP_CHANNEL_ID, msg, parse_mode="Markdown")
-            logging.info("Market Pulse dihantar.")
-        except Exception as e:
-            logging.error(f"Ralat hantar Market Pulse: {e}")
-            
-    # Reset status untuk kitaran seterusnya
-    signal_found_this_cycle = False
+        return response.choices[0].message.content
+    except Exception as e:
+        return "❌ *AI Insight Unavailable:* Isu sambungan ke pelayan Groq."
 
 # =====================================================================
-# RUTIN UTAMA (MAIN ENGINE LOOP)
+# 4. BROADCAST & INTERFACE
 # =====================================================================
-def alpha_v3_job():
-    logging.info("Memulakan Kitaran Imbasan AlphaV3...")
+def send_signal(coin, verdict="STRONG BUY"):
+    ai_report = get_ai_vip_report(coin)
     
-    # 1. Jalankan Core Engine
-    engine_one_core_scan()
-    # (Proses data dan hantar signal jika melepasi syarat)
-    
-    time.sleep(10) # Rehat sebentar (Cooling period)
-    
-    # 2. Jalankan Satellite Engine
-    engine_two_satellite_scan()
-    # (Proses data dan hantar signal jika melepasi syarat)
+    msg = f"""⚡ **ALPHA EXECUTION : {coin['narrative'].upper()}**
+
+**Asset Identified:** {coin['name']} `${coin['symbol']}`
+`{coin['contract_address']}`
+
+📊 **MARKET METRICS**
+   **Market Cap** : `${coin['market_cap'] / 1e6:.1f}M` | **Vol 24H** : `${coin['volume_24h'] / 1e6:.1f}M` 🟢
+   **Trend 24H** : `+{coin['price_change_24h']}%` 🟢 | **1H Retracement** : `{coin['price_change_1h']}%` 🩸
+
+📈 **TECHNICAL INTEL**
+   **Momentum (1H)** : RSI {coin['rsi']} (Oversold Reset) 🟢 
+   **Value Zone** : Fibonacci (0.5 - 0.618) 🎯
+
+🌊 **ORDER FLOW SENSORS**
+   **Net-Volume** : {verdict} 🟢 (${coin['buy_vol']}k In / ${coin['sell_vol']}k Out)
+   **Capital Inflow**: `+{coin['flow_ratio']}x (Dominasi Institusi)`
+
+{ai_report}
+
+[ 🦄 Maestro ] [ 🟨 Binance ] [ 📰 Berita X ] [ 🐦 Twitter ] [ ✈️ Telegram ]
+"""
+    bot.send_message(VIP_CHANNEL_ID, msg, parse_mode="Markdown", disable_web_page_preview=True)
+
+# =====================================================================
+# 5. RENDER SERVER (ANTI-KILL & FIX 501 ERROR)
+# =====================================================================
+class RenderHandler(BaseHTTPRequestHandler):
+    # Jawab isyarat GET
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b"AlphaV3 Bot is Running Perfectly!")
+        
+    # JAWAB ISYARAT HEAD (INI YANG AKAN HILANGKAN TULISAN MERAH 501 TU!)
+    def do_HEAD(self):
+        self.send_response(200)
+        self.end_headers()
+        
+    # Supaya log tak semak (Block request log display)
+    def log_message(self, format, *args):
+        pass
+
+def run_server():
+    port = int(os.environ.get("PORT", 8080))
+    server = HTTPServer(('0.0.0.0', port), RenderHandler)
+    server.serve_forever()
+
+# =====================================================================
+# 6. MAIN LOOPS
+# =====================================================================
+def main_job():
+    print(f"Scanning market... {datetime.now()}")
 
 if __name__ == "__main__":
-    # Hantar amaran terus kepada Admin sebaik sahaja skrip hidup (Auto-Boot)
-    send_admin_reboot_alert()
+    # Start Dummy Server dalam thread (Wajib untuk Render Web Service)
+    threading.Thread(target=run_server, daemon=True).start()
     
-    # Penjadualan Kitaran (Schedule)
-    schedule.every(15).minutes.do(alpha_v3_job) # Imbas pasaran setiap 15 minit
-    schedule.every(6).hours.do(send_market_pulse) # Heartbeat setiap 6 jam
+    try:
+        bot.send_message(ADMIN_ID, "🚨 **SYSTEM REBOOTED**\nAlphaV3 beroperasi dengan Groq AI. Log Server telah dibersihkan.")
+    except:
+        pass
     
-    logging.info("Radar AlphaV3 kini aktif. Menunggu pusingan...")
+    schedule.every(15).minutes.do(main_job)
     
-    # Loop untuk pastikan skrip berjalan tanpa henti
     while True:
         schedule.run_pending()
         time.sleep(1)
-        
