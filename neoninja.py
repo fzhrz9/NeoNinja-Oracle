@@ -13,7 +13,7 @@ from flask import Flask
 app = Flask(__name__)
 @app.route('/')
 def health_check():
-    return "STATUS: OK | NEONINJA ORACLE PROTOCOL (V3.0 TRUE FIBO) OPERATIONAL"
+    return "STATUS: OK | NEONINJA ORACLE PROTOCOL (V3.1 UI FIXED) OPERATIONAL"
 
 def initialize_daemon():
     port = int(os.environ.get("PORT", 8080))
@@ -168,7 +168,7 @@ def verify_on_chain(symbol, cg_data):
         rank = cg_data.get('market_cap_rank', 'N/A')
         ath = cg_data.get('ath_change_percentage', 0)
 
-        # FORMAT LAPORAN (UI V2.9 MOCKUP)
+        # FORMAT LAPORAN (UI V3.1 - KEMAS & LURUS)
         report = f"**Asset Identified:** {cg_data['name']} `${symbol.upper()}`\n"
         report += f"`{addr}`\n\n"
         
@@ -181,8 +181,9 @@ def verify_on_chain(symbol, cg_data):
         report += f"   Diskaun ATH  : `{ath:.2f}%` 📉\n\n"
         
         report += f"📈 **TECHNICAL INTEL (1D)**\n"
-        report += f"   Trend        : RSI: {rsi_label} | MACD: {macd_emoji}\n"
-        report += f"   Momentum     : VOL: {vol_emoji} | Pullback 50%: 1D {emo_1d} | 1W {emo_1w}\n\n"
+        report += f"   Trend      : RSI: {rsi_label} | MACD: {macd_emoji}\n"
+        report += f"   Momentum   : VOL: {vol_emoji}\n"
+        report += f"   Pullback   : 1D {emo_1d} | 1W {emo_1w}\n\n"
         
         report += f"⛓️ **ON-CHAIN SECURITY**\n"
         report += f"   Liquidity    : `${liq:,.0f}` 🟢\n"
@@ -242,14 +243,14 @@ def neoninja_pipeline(chat_id):
             time.sleep(30)
 
 @bot.message_handler(commands=['start'])
-def start(m): bot.reply_to(m, "✅ **NEONINJA TRUE FIBO V3.0**\nType `/scan` to start.")
+def start(m): bot.reply_to(m, "✅ **NEONINJA TRUE FIBO V3.1**\nType `/scan` to start.")
 
 @bot.message_handler(commands=['scan'])
 def scan(m):
     global SYSTEM_ACTIVE
     if not SYSTEM_ACTIVE:
         SYSTEM_ACTIVE = True
-        bot.reply_to(m, "🟢 **V3.0 SCANNER ACTIVE**\nLogik AND/OR (True Fibo Swing) & Security berjalan.")
+        bot.reply_to(m, "🟢 **V3.1 SCANNER ACTIVE**\nUI dibaiki. Sedia memburu.")
         threading.Thread(target=neoninja_pipeline, args=(m.chat.id,), daemon=True).start()
 
 @bot.message_handler(commands=['stop'])
