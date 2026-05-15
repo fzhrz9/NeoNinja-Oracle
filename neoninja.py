@@ -54,16 +54,17 @@ def run_web_server():
 # =====================================================================
 def send_admin_reboot_alert():
     msg = (
-        "🚨 *ALPHAV3 REBOOT DETECTED*\n\n"
-        "Tuan, sistem baru sahaja dihidupkan semula akibat kitaran pelayan awan (cloud server). "
-        "Radar Dual-Engine telah diaktifkan secara automatik (Auto-Scan). "
-        "Tiada tindakan manual diperlukan. Sedia beroperasi."
+        "🚨 *[SYS_BOOT] Pengaktifan Teras AlphaV3*\n\n"
+        "Cloud aktif. Radar Dual-Engine kini ONLINE.\n"
+        "Protokol Auto-Scan : AKTIF.\n"
+        "Intervensi manual tidak diperlukan."
     )
     try:
+        # Pastikan di sini menggunakan ADMIN_ID, bukan VIP_CHANNEL_ID
         bot.send_message(ADMIN_ID, msg, parse_mode="Markdown")
-        logging.info("Auto-boot alert dihantar kepada Admin.")
+        logging.info("System boot alert routed to Admin.")
     except Exception as e:
-        logging.error(f"Gagal hantar amaran admin: {e}")
+        logging.error(f"Admin routing failed: {e}")
 
 # =====================================================================
 # MODUL 2: PAIP DATA & DUAL-ENGINE SCANNER
