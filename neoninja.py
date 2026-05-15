@@ -13,7 +13,7 @@ from flask import Flask
 app = Flask(__name__)
 @app.route('/')
 def health_check():
-    return "STATUS: OK | NEONINJA ORACLE PROTOCOL (V2.1 OMNI-VERSE) OPERATIONAL"
+    return "STATUS: OK | NEONINJA ORACLE PROTOCOL (V2.4 BINANCE INTEGRATION) OPERATIONAL"
 
 def initialize_daemon():
     port = int(os.environ.get("PORT", 8080))
@@ -58,9 +58,9 @@ CHAIN_MAP = {
 # ==========================================
 def verify_on_chain(symbol, cg_data):
     try:
-        # Tapisan Awal CoinGecko: Market Cap $5M - $150M sahaja (Zon Mid-Cap)
+        # ⚠️ TAPISAN DILONGGARKAN: Market Cap $2M - $500M
         market_cap = cg_data.get('market_cap', 0)
-        if not (5000000 <= market_cap <= 150000000): return None, None
+        if not (2000000 <= market_cap <= 500000000): return None, None
 
         dex_search = requests.get(f"https://api.dexscreener.com/latest/dex/search?q={symbol}", timeout=10).json()
         if not dex_search.get('pairs'): return None, None
@@ -80,8 +80,8 @@ def verify_on_chain(symbol, cg_data):
         liquidity_usd = target_pair.get('liquidity', {}).get('usd', 0)
         volume_24h = target_pair.get('volume', {}).get('h24', 0)
         
-        # ⚠️ TAPISAN GRED INSTITUSI: Minimum $100k LP & $50k Volume
-        if liquidity_usd < 100000 or volume_24h < 50000: return None, None
+        # ⚠️ TAPISAN DILONGGARKAN: Minimum $50k LP & $20k Volume
+        if liquidity_usd < 50000 or volume_24h < 20000: return None, None
 
         chain_display_name = CHAIN_MAP.get(chain_id, chain_id.upper())
 
@@ -118,7 +118,7 @@ def verify_on_chain(symbol, cg_data):
         price_24h_drop = cg_data.get('price_change_percentage_24h', 0)
         current_price = cg_data.get('current_price', 0)
         
-        if liquidity_usd > 250000: lp_status = "🟢"
+        if liquidity_usd > 150000: lp_status = "🟢"
         else: lp_status = "🟡"
 
         # ==========================================
@@ -144,31 +144,34 @@ def verify_on_chain(symbol, cg_data):
         # 🎛️ BINA BUTANG (INLINE KEYBOARD)
         # ==========================================
         markup = InlineKeyboardMarkup()
-        markup.row_width = 2 # Set kepada 2 supaya butang nampak stabil/seimbang
+        markup.row_width = 2
         
-        # Butang Terminal (Tingkat 1) - Smart Routing
+        # Tingkat 1: Bot Telegram
         if chain_id == 'solana':
             term_url = f"https://t.me/bonkbot_bot?start={contract_address}"
             btn_term = InlineKeyboardButton(f"🔫 Beli di BonkBot ({chain_display_name})", url=term_url)
         else:
             term_url = f"https://t.me/maestro?start={contract_address}"
             btn_term = InlineKeyboardButton(f"🦄 Beli di Maestro ({chain_display_name})", url=term_url)
+        markup.add(btn_term)
             
-        # 📰 Butang Radar Berita (X) - Carian Live Cashtag
+        # Tingkat 2: Binance (CEX) & Radar Berita
+        binance_url = f"https://www.binance.com/en/trade/{symbol.upper()}_USDT"
+        btn_binance = InlineKeyboardButton("🟨 Beli di Binance", url=binance_url)
+        
         news_search_url = f"https://twitter.com/search?q=%24{symbol}&src=typed_query&f=live"
         btn_news = InlineKeyboardButton("📰 Radar Berita (X)", url=news_search_url)
+        
+        markup.add(btn_binance, btn_news)
 
-        markup.add(btn_term)
-        markup.add(btn_news)
-
-        # Butang Sosial (Tingkat 2)
+        # Tingkat 3: Sosial
         soc_buttons = []
         if twitter_url: soc_buttons.append(InlineKeyboardButton("🐦 Twitter", url=twitter_url))
         if telegram_url: soc_buttons.append(InlineKeyboardButton("✈️ Telegram", url=telegram_url))
         if web_url: soc_buttons.append(InlineKeyboardButton("🌐 Website", url=web_url))
         if soc_buttons: markup.add(*soc_buttons)
 
-        # Butang Analisis (Tingkat 3)
+        # Tingkat 4: Analisis
         cg_url = f"https://www.coingecko.com/en/coins/{cg_data['id']}"
         dex_url = f"https://dexscreener.com/{chain_id}/{contract_address}"
         markup.add(
@@ -182,7 +185,7 @@ def verify_on_chain(symbol, cg_data):
 
 def neoninja_pipeline(chat_id):
     global SYSTEM_ACTIVE, CURRENT_NARRATIVE_IDX
-    print("\n[SYSTEM] Initializing V2.1 VIP OMNI-VERSE PROTOCOL...")
+    print("\n[SYSTEM] Initializing V2.4 BINANCE INTEGRATION PROTOCOL...")
     
     headers = {
         "accept": "application/json",
@@ -197,7 +200,7 @@ def neoninja_pipeline(chat_id):
             
             all_coins = []
             page = 1
-            max_pages = 3 # Naik sikit ke 3 muka surat sebab kita cover banyak chain
+            max_pages = 3
             
             while page <= max_pages:
                 if not SYSTEM_ACTIVE: break
@@ -224,8 +227,8 @@ def neoninja_pipeline(chat_id):
                     ath_change = coin.get('ath_change_percentage')
                     
                     if price_change_24h is not None and ath_change is not None:
-                        # ⚠️ TAPISAN HARGA: Jatuh 5%-25% sehari, ATH jatuh 30%-80%
-                        if -25 <= price_change_24h <= -5 and -80 <= ath_change <= -30:
+                        # ⚠️ TAPISAN DILONGGARKAN: Jatuh 2%-35% sehari, ATH jatuh 30%-90%
+                        if -35 <= price_change_24h <= -2 and -90 <= ath_change <= -30:
                             if symbol not in MEMORY_CACHE or (current_time - MEMORY_CACHE[symbol]) > 28800: 
                                 
                                 report, markup = verify_on_chain(symbol, coin)
@@ -255,7 +258,8 @@ def engage_scanner(message):
     if SYSTEM_ACTIVE: return
     SYSTEM_ACTIVE = True
     
-    intro_msg = "🟢 **NEONINJA— VIP ACTIVE**"
+    intro_msg = "🟢 **NEONINJA— VIP ACTIVE (BINANCE INTEGRATED)**\n"
+    intro_msg += "*— Radar 10 Sektor dibuka. Menyelam sekarang...*"
     
     bot.reply_to(message, intro_msg)
     threading.Thread(target=neoninja_pipeline, args=(message.chat.id,), daemon=True).start()
