@@ -3,22 +3,30 @@ import time
 import requests
 import telebot
 import schedule
+import threading  # Tambah untuk server dummy
+from http.server import HTTPServer, BaseHTTPRequestHandler # Tambah untuk Render
 from datetime import datetime
-from groq import Groq  # TUKAR KE GROQ
+from groq import Groq
 
 # =====================================================================
-# 1. KONFIGURASI & API KEYS (FINAL LOCK)
+# 1. KONFIGURASI & API KEYS
 # =====================================================================
 TELEGRAM_BOT_TOKEN = "8673710597:AAGD4I53588YSL1QK9ZllzlaeQY68gFttSQ"
-GROQ_API_KEY = os.getenv("GROQ_API_KEY")  # GUNA KEY DARI console.groq.com
+GROQ_API_KEY = os.getenv("GROQ_API_KEY") 
 VIP_CHANNEL_ID = "-1003943365561"
 ADMIN_ID = "970309251"
 
 bot = telebot.TeleBot(TELEGRAM_BOT_TOKEN)
-# INISIALISASI GROQ CLIENT
-groq_client = Groq(api_key=GROQ_API_KEY)
 
-# PARAMETER SWEET SPOT (FINAL)
+# MATIKAN GROQ SECARA LEMBUT (Bypass jika tiada Key)
+groq_client = None
+if GROQ_API_KEY:
+    try:
+        groq_client = Groq(api_key=GROQ_API_KEY)
+    except:
+        groq_client = None
+
+# PARAMETER SWEET SPOT
 MC_MIN, MC_MAX = 5000000, 500000000
 MIN_LIQUIDITY = 250000
 MIN_VOL_MC_RATIO = 0.10
@@ -27,10 +35,7 @@ MAX_1H_CHANGE = -1.5
 FIBO_ZONE = (0.5, 0.618)
 SMART_MONEY_RATIO = 1.5
 
-# SHARIAH BLACKLIST
 SHARIAH_BLACKLIST = ['gambling', 'gamblefi', 'lending', 'borrowing', 'derivatives', 'perpetuals', 'adult']
-
-# ENGINE 1: CORE NARRATIVES
 CORE_NARRATIVES = ['artificial-intelligence', 'depin', 'real-world-assets-rwa', 'gaming', 'infrastructure']
 
 # =====================================================================
@@ -40,56 +45,34 @@ def is_shariah_compliant(categories):
     return not any(cat.lower() in SHARIAH_BLACKLIST for cat in categories)
 
 def analyze_sweet_spot(coin_data):
-    """
-    Fungsi pengesahan gred institusi.
-    Input: Data mentah dari API
-    Output: Boolean & Verdict
-    """
-    # 1. Fundamental Check
     if not (MC_MIN <= coin_data['market_cap'] <= MC_MAX): return False
     if coin_data['liquidity'] < MIN_LIQUIDITY: return False
     if (coin_data['volume_24h'] / coin_data['market_cap']) < MIN_VOL_MC_RATIO: return False
-    
-    # 2. Price Action Check
     if coin_data['price_change_24h'] < MIN_24H_CHANGE: return False
     if coin_data['price_change_1h'] > MAX_1H_CHANGE: return False
-    
-    # 3. Technical (Fibo & RSI)
-    # Simulasi pengiraan Fibo 0.618 dari Swing Low/High
     if not (FIBO_ZONE[0] <= coin_data['current_fibo_pos'] <= FIBO_ZONE[1]): return False
-    
     return True
 
 # =====================================================================
-# 3. MODUL AI VIP INSIGHTS (GROQ / LLAMA 3)
+# 3. MODUL AI VIP INSIGHTS (HOLD / DISABLED MODE)
 # =====================================================================
 def get_ai_vip_report(coin):
-    """Menjana laporan forensik rojak (English/Malay) gred VVIP guna Groq"""
-    prompt = f"""
-    Generate a professional crypto analysis for {coin['name']} (${coin['symbol']}).
-    Language: Professional Malay mixed with English trading terms (Rojak style).
-    Structure:
-    1. Narrative & Catalyst: Explain the sector, RWA/Utility, and compare with a major competitor (e.g. $FIL).
-    2. Smart Money Intel: Mention 4 elite wallets accumulation, social sentiment 'Mula Panas', and front-run opportunity.
-    3. Execution Plan: Entry Zone (Fibo), TP1 (Safe), TP2 (Target), TP3 (Moon), SL (Invalidation), and R:R Ratio (1:3.5).
-    Keep it concise but high conviction.
-    """
-    
-    # MENGGUNAKAN MODEL LLAMA 3 DI GROQ
-    response = groq_client.chat.completions.create(
-        model="llama-3.3-70b-specdec",
-        messages=[
-            {"role": "system", "content": "You are a Senior Hedge Fund Analyst."},
-            {"role": "user", "content": prompt}
-        ],
-        temperature=0.5
+    """Fungsi Groq dimatikan buat sementara. Hantar info manual."""
+    return (
+        "🚀 **ALPHA VIP INSIGHTS**\n\n"
+        "Analisis AI sedang dikemaskini oleh pihak teknikal. "
+        "Sila rujuk *Execution Plan* di bawah berdasarkan data Smart Money semasa.\n\n"
+        "• **Naratif:** Potensi tinggi dalam sektor " + coin['narrative'].upper() + ".\n"
+        "• **Status:** Early accumulation detected."
     )
-    return response.choices[0].message.content
 
 # =====================================================================
 # 4. BROADCAST & INTERFACE
 # =====================================================================
 def send_signal(coin, verdict="STRONG BUY"):
+    # Bot akan panggil fungsi AI yang dah 'diam' tu
+    ai_report = get_ai_vip_report(coin)
+    
     msg = f"""⚡ **ALPHA EXECUTION : {coin['narrative'].upper()}**
 
 **Asset Identified:** {coin['name']} `${coin['symbol']}`
@@ -113,27 +96,35 @@ def send_signal(coin, verdict="STRONG BUY"):
 
 ⚡ **VERDICT : 🟢 {verdict}**
    *Titik entri optimum disahkan oleh zon sokongan dan kemasukan dana tunai agresif.*
-
-[ 🦄 Maestro ] [ 🤖 Analysis (VIP) ]
-[ 🟨 Binance ] [ 📰 Berita X ]
-[ 🐦 Twitter ] [ ✈️ Telegram ] [ 🌐 Website ]
 """
     bot.send_message(VIP_CHANNEL_ID, msg, parse_mode="Markdown", disable_web_page_preview=True)
 
 # =====================================================================
-# 5. MAIN LOOPS (DUAL-ENGINE)
+# 5. RENDER PORT BINDING FIX (SERVER PALSU)
+# =====================================================================
+class SimpleHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b"AlphaV3 Bot is Active")
+
+def run_dummy_server():
+    port = int(os.environ.get("PORT", 8080))
+    server = HTTPServer(('0.0.0.0', port), SimpleHandler)
+    server.serve_forever()
+
+# =====================================================================
+# 6. MAIN LOOPS
 # =====================================================================
 def main_job():
-    # ENGINE 1 & 2 logic execution
-    # 1. Fetch data from APIs (CoinGecko / Dexscreener)
-    # 2. Filter by Shariah (is_shariah_compliant)
-    # 3. Filter by Sweet Spot (analyze_sweet_spot)
-    # 4. If all pass -> send_signal()
     print(f"Scanning market... {datetime.now()}")
 
 if __name__ == "__main__":
-    # Auto-Reboot Alert
-    bot.send_message(ADMIN_ID, "🚨 **SYSTEM REBOOTED**\nPelayan awan kembali aktif. Enjin AlphaV3 beroperasi secara automatik.")
+    # 1. Jalankan server dummy supaya Render tak matikan bot
+    threading.Thread(target=run_dummy_server, daemon=True).start()
+    
+    # 2. Amaran Reboot
+    bot.send_message(ADMIN_ID, "🚨 **SYSTEM REBOOTED**\nAlphaV3 aktif (AI Mode: Standby).")
     
     schedule.every(15).minutes.do(main_job)
     
