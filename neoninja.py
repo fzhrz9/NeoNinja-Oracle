@@ -13,7 +13,7 @@ from flask import Flask
 app = Flask(__name__)
 @app.route('/')
 def health_check():
-    return "STATUS: OK | NEONINJA V4.0 (SENTIMENT ENGINE) OPERATIONAL"
+    return "STATUS: OK | NEONINJA V4.0 (FIXED) OPERATIONAL"
 
 def initialize_daemon():
     port = int(os.environ.get("PORT", 8080))
@@ -55,7 +55,6 @@ def get_advanced_intel(coin_id, current_price, pair_data):
         is_1d_hit, is_1w_hit = False, False
 
         if len(prices) >= 26:
-            # RSI & MACD
             g, l = [], []
             for i in range(len(prices)-14, len(prices)):
                 diff = prices[i] - prices[i-1]
@@ -64,7 +63,6 @@ def get_advanced_intel(coin_id, current_price, pair_data):
             rsi_label = "Oversold 🟢" if rsi_val < 30 else ("Overbought 🔴" if rsi_val > 70 else "Neutral 🟡")
             macd_emoji = "🟢" if (sum(prices[-12:])/12 - sum(prices[-26:])/26) > 0 else "🔴"
             
-            # VOLUME & FIBO
             if volumes[-1] > (sum(volumes[-8:-1])/7 * 1.5): vol_emoji = "🟢"
             tol = 0.025
             f7d = (max(prices[-7:]) + min(prices[-7:])) / 2
@@ -72,7 +70,6 @@ def get_advanced_intel(coin_id, current_price, pair_data):
             if abs(current_price - f7d)/f7d <= tol: p_1d, is_1d_hit = "🎯", True
             if abs(current_price - f30d)/f30d <= tol: p_1w, is_1w_hit = "🎯", True
 
-        # 🌊 MARKET SENTIMENT (ORDER FLOW)
         buys = pair_data.get('txns', {}).get('h1', {}).get('buys', 0)
         sells = pair_data.get('txns', {}).get('h1', {}).get('sells', 0)
         total_tx = buys + sells
@@ -83,9 +80,7 @@ def get_advanced_intel(coin_id, current_price, pair_data):
             elif buy_pct < 30: flow_text = f"PANIC SELL 🔴 ({buy_pct:.0f}% / {100-buy_pct:.0f}%)"
             else: flow_text = f"Stable 🟡 ({buy_pct:.0f}% / {100-buy_pct:.0f}%)"
         
-        # 🔥 SOCIAL HYPE (SIMULATED)
         fdv = pair_data.get('fdv', 1)
-        liq = pair_data.get('liquidity', {}).get('usd', 1)
         hype = "SENDU 🧊"
         if (volumes[-1] / fdv) > 0.2 or (buys > 100): hype = "VIRAL 🔥 (Twitter Trending)"
         elif (volumes[-1] / fdv) > 0.1: hype = "Trending 🟢"
@@ -126,7 +121,6 @@ def verify_on_chain(symbol, cg_data):
         sec_t, is_safe = check_security(pair['chainId'], pair['baseToken']['address'])
         if not is_safe: return None, None
 
-        # 📄 FORMAT V4.0 ULTRA-COMPRESSED
         report = f"**Asset Identified:** {cg_data['name']} `${symbol.upper()}`\n"
         report += f"`{pair['baseToken']['address']}`\n\n"
         report += f"📊 **MARKET AGGREGATE**\n"
@@ -185,7 +179,8 @@ def scan(m):
 
 @bot.message_handler(commands=['stop'])
 def stop(m):
-    global SYSTEM_ACTIVE = False
+    global SYSTEM_ACTIVE
+    SYSTEM_ACTIVE = False
     bot.reply_to(m, "🔴 Scanner Stopped.")
 
 if __name__ == "__main__":
